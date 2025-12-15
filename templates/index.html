@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Resume Skill Gap Analyzer</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: linear-gradient(120deg, #1d2671, #c33764);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1d2671;
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .form-box {
+            background: #f8f9fc;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            background: linear-gradient(90deg, #1d2671, #c33764);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .result {
+            margin-top: 35px;
+        }
+
+        .card {
+            background: #f8f9fc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 6px solid #1d2671;
+        }
+
+        .score {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1d2671;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #1d2671;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        .roadmap li {
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #c33764;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #888;
+            font-size: 13px;
+        }
+
+        .progress-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .circular-progress {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: conic-gradient(#1d2671 0deg,
+                    #e0e0e0 0deg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .circular-progress::before {
+            content: "";
+            position: absolute;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: #ffffff;
+        }
+
+        .progress-value {
+            position: absolute;
+            font-size: 26px;
+            font-weight: bold;
+            color: #1d2671;
+        }
+
+        .progress-label {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .roadmap-item,
+        .project-item {
+            background: #ffffff;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid #c33764;
+        }
+
+        .project-item b {
+            color: #1d2671;
+        }
+
+        .project-title {
+            font-weight: 700;
+            color: #c33764;
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Resume–Job Skill Gap Analyzer</h1>
+        <p class="subtitle">
+            AI-powered analysis to evaluate job readiness and generate a personalized learning roadmap
+        </p>
+
+        <div class="form-box">
+            <form method="POST" enctype="multipart/form-data">
+                <label>Upload Resume (PDF)</label>
+                <input type="file" name="resume" required>
+
+                <label>Select Target Job Role</label>
+                <select name="role" required>
+                    <option value="" disabled {% if not selected_role %}selected{% endif %}>
+                        Choose Job Role
+                    </option>
+
+                    {% for role in roles %}
+                    <option value="{{ role }}" {% if selected_role==role %}selected{% endif %}>
+                        {{ role }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit">Analyze Resume</button>
+            </form>
+        </div>
+
+        {% if result %}
+        <div class="result">
+
+            <div class="card">
+                <h3>Analysis Result – {{ result.role }}</h3>
+                <div class="progress-container">
+                    <div class="circular-progress" data-percentage="{{ result.match_percentage }}">
+                        <div class="progress-value">0%</div>
+                    </div>
+                </div>
+                <div class="progress-label" id="matchLabel"></div>
+                <p style="text-align:center; margin-top:10px;">
+                    Resume match score for selected job role
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Matched Skills</h3>
+
+                {% if result.matched_skills and result.matched_skills|length > 0 %}
+                {% for skill in result.matched_skills %}
+                <span class="badge">{{ skill }}</span>
+                {% endfor %}
+                {% else %}
+                <p style="color:#777; font-style: italic;">
+                    No matched skills found for the selected job role.
+                </p>
+                {% endif %}
+            </div>
+
+
+            <div class="card">
+                <h3>Missing Skills</h3>
+                <ul>
+                    {% for skill in result.missing_skills %}
+                    <li>{{ skill }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Personalized Learning Roadmap</h3>
+                <ul class="roadmap">
+                    {% for item in result.roadmap %}
+                    <li>
+                        <strong>{{ item.week }}</strong><br>
+                        <b>{{ item.skill }}</b>: {{ item.description }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% if result.projects|length > 0 %}
+            <div class="card">
+                <h3>Recommended Practice Projects</h3>
+                <p style="color:#666; font-size:14px;">
+                    To improve your skill match, work on the following skill-based projects:
+                </p>
+
+                {% for item in result.projects %}
+                <div class="project-item">
+                    <div class="project-title">
+                        Project {{ loop.index }}
+                    </div>
+                    <p>
+                        <b>Skill:</b> {{ item.skill }}
+                    </p>
+                    <p>
+                        <b>Project:</b> {{ item.project }}
+                    </p>
+                    <p>
+                        <b>Reference:</b> {{ item.reference }}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+
+        </div>
+        {% endif %}
+
+        <footer>
+            © SDP Project | Resume Skill Gap Analyzer
+        </footer>
+    </div>
+
+    <script>
+        const circularProgress = document.querySelector(".circular-progress");
+        const progressValue = document.querySelector(".progress-value");
+        const matchLabel = document.getElementById("matchLabel");
+
+        if (circularProgress) {
+            let progressStartValue = 0;
+            const progressEndValue = parseInt(
+                circularProgress.getAttribute("data-percentage")
+            );
+
+            let progressColor = "#c62828"; // default red
+            let labelText = "Low Match";
+
+            // Color + Label logic
+            if (progressEndValue >= 70) {
+                progressColor = "#2e7d32";
+                labelText = "Strong Match";
+            } else if (progressEndValue >= 50) {
+                progressColor = "#66bb6a";
+                labelText = "Good Match";
+            } else if (progressEndValue >= 30) {
+                progressColor = "#f9a825";
+                labelText = "Partial Match";
+            }
+
+            matchLabel.textContent = labelText;
+            matchLabel.style.color = progressColor;
+
+            const speed = 20;
+
+            const progress = setInterval(() => {
+                progressStartValue++;
+                progressValue.textContent = `${progressStartValue}%`;
+                progressValue.style.color = progressColor;
+
+                circularProgress.style.background = `conic-gradient(
+                ${progressColor} ${progressStartValue * 3.6}deg,
+                #e0e0e0 0deg
+            )`;
+
+                if (progressStartValue >= progressEndValue) {
+                    clearInterval(progress);
+                }
+            }, speed);
+        }
+    </script>
+
+
+
+</body>
+
+</html>
